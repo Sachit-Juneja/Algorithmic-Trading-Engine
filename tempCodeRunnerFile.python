@@ -1,6 +1,55 @@
 import yfinance as yf
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, accuracy_score
+import matplotlib.pyplot as plt
 
-# Fetch historical minute-level data
-ticker = "AAPL"  # Example stock: Apple
-data = yf.download(tickers=ticker, period="5d", interval="1m")  # Last 7 days, 1-min data
-print(data.head())
+# Step 1: Download stock data
+ticker = "AAPL"
+data = yf.download(tickers=ticker, period="1y", interval="1d")
+
+# Step 2: Add technical indicators
+data['SMA_10'] = data['Close'].rolling(window=10).mean()
+data['SMA_50'] = data['Close'].rolling(window=50).mean()
+
+# RSI Indicator
+delta = data['Close'].diff()
+gain = delta.where(delta > 0, 0)
+loss = -delta.where(delta < 0, 0)
+avg_gain = gain.rolling(window=14).mean()
+avg_loss = loss.rolling(window=14).mean()
+rs = avg_gain / avg_loss
+data['RSI'] = 100 - (100 / (1 + rs))
+
+# Step 3: Define the target variable (binary classification)
+data['Target'] = (data['Close'].shift(-1) > data['Close']).astype(int)
+
+# Drop missing values
+data.dropna(inplace=True)
+
+# Step 4: Define features and labels
+features = ['Close', 'SMA_10', 'SMA_50', 'RSI']
+X = data[features]
+y = data['Target']
+
+# Step 5: Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Step 6: Train the Random Forest Classifier
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Step 7: Make predictions and evaluate the model
+y_pred = model.predict(X_test)
+print(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
+print("Classification Report:")
+print(classification_report(y_test, y_pred))
+
+# Step 8: Visualize the results
+plt.figure(figsize=(10, 6))
+plt.plot(y_test.values, label="Actual", color='blue')
+plt.plot(y_pred, label="Predicted", color='red')
+plt.title("Actual vs Predicted Target")
+plt.legend()
+plt.show()
