@@ -25,15 +25,19 @@ def fetch_data(ticker, period="1y", interval="1d"):
     data['MACD'] = data['EMA_12'] - data['EMA_26']
     data['Signal_Line'] = data['MACD'].ewm(span=9, adjust=False).mean()
 
-    # Bollinger Bands calculation
+    # Calculate rolling standard deviation for Bollinger Bands
     rolling_std = data['Close'].rolling(window=50).std()
+
+    # Compute Bollinger Bands (upper and lower)
     data['BB_upper'] = data['SMA_50'] + (2 * rolling_std)
     data['BB_lower'] = data['SMA_50'] - (2 * rolling_std)
 
+    # Drop NaN values in the essential columns before proceeding
+    data = data.dropna(subset=['SMA_50', 'BB_upper', 'BB_lower', 'RSI', 'MACD', 'Signal_Line'])
 
-    # Drop rows with missing values
-    data.dropna(inplace=True)
-    
+    # Print out the resulting DataFrame to see the final values
+    print(data[['Close', 'SMA_50', 'BB_upper', 'BB_lower', 'RSI', 'MACD', 'Signal_Line']].head())
+
     return data
 
 def create_features(data):
