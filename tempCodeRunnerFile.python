@@ -1,0 +1,6 @@
+import yfinance as yf
+
+# Fetch historical minute-level data
+ticker = "AAPL"  # Example stock: Apple
+data = yf.download(tickers=ticker, period="5d", interval="1m")  # Last 7 days, 1-min data
+print(data.head())
