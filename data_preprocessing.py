@@ -25,9 +25,11 @@ def fetch_data(ticker, period="1y", interval="1d"):
     data['MACD'] = data['EMA_12'] - data['EMA_26']
     data['Signal_Line'] = data['MACD'].ewm(span=9, adjust=False).mean()
 
-    # Bollinger Bands
-    data['BB_upper'] = data['SMA_50'] + (2 * data['Close'].rolling(window=50).std())
-    data['BB_lower'] = data['SMA_50'] - (2 * data['Close'].rolling(window=50).std())
+    # Bollinger Bands calculation
+    rolling_std = data['Close'].rolling(window=50).std()
+    data['BB_upper'] = data['SMA_50'] + (2 * rolling_std)
+    data['BB_lower'] = data['SMA_50'] - (2 * rolling_std)
+
 
     # Drop rows with missing values
     data.dropna(inplace=True)
